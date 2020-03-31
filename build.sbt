@@ -22,9 +22,9 @@ lazy val root = (project in file(".")).
     coverageHighlighting := true,
 
     libraryDependencies ++= Seq(
-      "org.apache.spark" %% "spark-core" % "2.4.5" % "compile",
-      "org.apache.spark" %% "spark-streaming" % "2.4.5",
-      "org.apache.spark" %% "spark-sql" % "2.4.5",
+      "org.apache.spark" %% "spark-core" % "2.4.5" % "provided",
+      "org.apache.spark" %% "spark-streaming" % "2.4.5" % "provided",
+      "org.apache.spark" %% "spark-sql" % "2.4.5" % "provided",
       "org.apache.httpcomponents" % "httpclient" % "4.5.6",
       "io.spray" %% "spray-json" % "1.3.2",
 

@@ -5,7 +5,7 @@ import java.nio.file.Files
 import java.util.UUID
 import java.util.concurrent.TimeoutException
 
-//import org.apache.log4j.Logger
+import org.apache.log4j.Logger
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.streaming.{DataStreamReader, DataStreamWriter, StreamingQuery}
 import org.apache.spark.sql.types.StringType
@@ -14,14 +14,15 @@ import org.apache.spark.SparkConf
 import com.microsoft.ml.spark.io.IOImplicits._
 import org.apache.spark.sql.execution.streaming.DistributedHTTPSourceProvider
 import com.microsoft.ml.spark.io.http.HTTPSchema.string_to_response
-import org.apache.spark.sql.functions.{concat, lit}
+import org.apache.spark.sql.functions._
 
 object RestInputSparkApp extends App {
 
-//  val log = Logger.getLogger(getClass.getName)
+  val log = Logger.getLogger(getClass.getName)
+
 
   val host = "localhost"
-  val port = 8888
+  val port = 8889
   val tmpDir = {
     tmpDirCreated = true
     Files.createTempDirectory("MML-Test-")
@@ -30,7 +31,7 @@ object RestInputSparkApp extends App {
     .setAppName("Test App")
     .setMaster(s"local[*]")
     .set("spark.logConf", "true")
-    .set("spark.sql.shuffle.partitions", "20")
+    .set("spark.sql.shuffle.partitions", "5")
     .set("spark.driver.maxResultSize", "6g")
     .set("spark.sql.warehouse.dir", "/tmp/sparkWarehouse")
     .set("spark.sql.crossJoin.enabled", "true")
@@ -62,7 +63,7 @@ object RestInputSparkApp extends App {
         .option("checkpointLocation",
           new File(tmpDir.toFile, s"checkpoints-${UUID.randomUUID()}").toString)
     }
-    println(classOf[DistributedHTTPSourceProvider].getName)
+    log.info(classOf[DistributedHTTPSourceProvider].getName)
 
     baseWriter(baseReader
       .load()
