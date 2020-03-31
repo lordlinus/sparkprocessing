@@ -8,7 +8,7 @@ import java.util.concurrent.TimeoutException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.streaming.{DataStreamReader, DataStreamWriter, StreamingQuery}
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.SparkConf
 import com.microsoft.ml.spark.io.IOImplicits._
@@ -17,12 +17,11 @@ import com.microsoft.ml.spark.io.http.HTTPSchema.string_to_response
 import org.apache.spark.sql.functions._
 
 object RestInputSparkApp extends App {
-
   val log = Logger.getLogger(getClass.getName)
-
-
   val host = "localhost"
   val port = 8889
+  val apiName = "foo"
+
   val tmpDir = {
     tmpDirCreated = true
     Files.createTempDirectory("MML-Test-")
@@ -43,23 +42,27 @@ object RestInputSparkApp extends App {
       .getOrCreate()
     sess
   }
-  val server = createServer().start()
   var tmpDirCreated = false
 
   import session.implicits._
   var sessionInitialized = false
 
+  val mySchema = new StructType()
+    .add("name",StringType)
+      .add("firstname",StringType)
+      .add("middlename",StringType)
+
   def createServer(): DataStreamWriter[Row] = {
     def baseReader: DataStreamReader = {
       session.readStream.server
-        .address(host, port, "foo")
+        .address(host, port, apiName)
         .option("maxPartitions", 3)
     }
     def baseWriter(df: DataFrame): DataStreamWriter[Row] = {
       df.writeStream
         .server
-        .option("name", "foo")
-        .queryName("foo")
+        .option("name", apiName)
+        .queryName(apiName)
         .option("checkpointLocation",
           new File(tmpDir.toFile, s"checkpoints-${UUID.randomUUID()}").toString)
     }
@@ -67,9 +70,11 @@ object RestInputSparkApp extends App {
 
     baseWriter(baseReader
       .load()
-        .withColumn("content",col("request.entity.content"))
-      .withColumn("contentLength", col("request.entity.contentLength"))
-      .withColumn("reply", string_to_response( concat( col("content").cast(StringType) )))
+        .parseRequest(apiName,mySchema)
+//        .withColumn("content",col("request.entity.content"))
+//      .withColumn("contentLength", col("request.entity.contentLength"))
+//      .withColumn("reply", string_to_response( concat( col("content").cast(StringType) )))
+        .withColumn("reply", string_to_response(col("name").cast(StringType)))
     )
   }
 
@@ -106,6 +111,8 @@ object RestInputSparkApp extends App {
     }
     throw new TimeoutException(s"Server Did not start within $maxTimeWaited ms")
   }
+
+  val server = createServer().start()
 
   waitForServer(server)
 
