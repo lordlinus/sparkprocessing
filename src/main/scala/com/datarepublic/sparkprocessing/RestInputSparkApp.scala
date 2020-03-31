@@ -71,7 +71,7 @@ object RestInputSparkApp extends App {
     baseWriter(baseReader
       .load()
         .parseRequest(apiName,mySchema)
-//        .withColumn("content",col("request.entity.content"))
+//      .withColumn("content",col("request.entity.content"))
 //      .withColumn("contentLength", col("request.entity.contentLength"))
 //      .withColumn("reply", string_to_response( concat( col("content").cast(StringType) )))
         .withColumn("reply", string_to_response(col("name").cast(StringType)))
